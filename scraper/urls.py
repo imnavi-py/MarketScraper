@@ -1,10 +1,11 @@
 from django.urls import path
-from .views import MarketDataListView, MarketDataRetrieveView, login
+from .views import MarketDataDeleteView, MarketDataListView, MarketDataRetrieveView, login
 
 urlpatterns = [
     path('login/', login, name='login'),
     path('marketdata/', MarketDataListView.as_view(), name='marketdata-list'),
     path('marketdata/<int:id>/', MarketDataRetrieveView.as_view(), name='marketdata-retrieve'),
+    path('market-data/<int:id>/delete/', MarketDataDeleteView.as_view(), name='market-data-delete'),
 ]
 
 

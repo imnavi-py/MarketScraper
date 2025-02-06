@@ -27,16 +27,27 @@ def login(request):
     else:
         return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
-# API برای گرفتن تمام داده‌ها
 class MarketDataListView(generics.ListAPIView):
-    queryset = MarketData.objects.all()
     serializer_class = MarketDataSerializer
+    def get_queryset(self):
+        queryset = MarketData.objects.all()
+        title = self.request.query_params.get('title', None)  # دریافت پارامتر 'title'
+        
+        # اگر پارامتر 'title' وجود داشته باشد، queryset را محدود کنید
+        if title:
+            queryset = queryset.filter(title__icontains=title)  # جستجو با عبارت مشابه (Case-Insensitive)
 
-# API برای گرفتن یک داده خاص بر اساس id
+        return queryset
+
 class MarketDataRetrieveView(generics.RetrieveAPIView):
     queryset = MarketData.objects.all()
     serializer_class = MarketDataSerializer
-    lookup_field = 'id'  # استفاده از id برای جستجو
+    lookup_field = 'id'
+
+class MarketDataDeleteView(generics.DestroyAPIView):
+    queryset = MarketData.objects.all()
+    serializer_class = MarketDataSerializer
+    lookup_field = 'id'
 
 
 

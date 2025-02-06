@@ -15,7 +15,7 @@ class MarketDataConsumer(AsyncWebsocketConsumer):
     
     async def connect(self):
         import asyncio
-        Authorization = "**************"
+        Authorization = "691b0ba70730e772997d9446e1378b9e65bb94fa"
         self.user = await self.authenticate_user(Authorization)
         if self.user is None:
             await self.close(code=4003)  # Unauthorized
@@ -90,7 +90,7 @@ class MarketDataConsumer(AsyncWebsocketConsumer):
         await asyncio.sleep(1)
     
         self.driver = webdriver.Chrome(service=Service(driver_path), options=chrome_options)
-        self.driver.get("***********")
+        self.driver.get("https://cointelegraph.com/tags/markets")
         if not self.is_connected:
             print("Connection is closed, exiting browser launch.")
             self.driver.quit()
