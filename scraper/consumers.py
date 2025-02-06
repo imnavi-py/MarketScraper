@@ -23,7 +23,7 @@ class MarketDataConsumer(AsyncWebsocketConsumer):
 
         self.room_group_name = "market_data"
         self.is_connected = True
-        self.driver = None  # مقدار اولیه برای درایور
+        self.driver = None
         self.monitor_task = asyncio.create_task(self.monitor_connection())
 
         await self.channel_layer.group_add(
@@ -33,10 +33,10 @@ class MarketDataConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def disconnect(self, close_code):
-        self.is_connected = False  # به‌روزرسانی وضعیت اتصال
+        self.is_connected = False
         print("WebSocket disconnected.")
 
-        # بستن منابع
+        # close resources
         if hasattr(self, "driver") and self.driver is not None:
             try:
                 self.driver.quit()
@@ -51,7 +51,6 @@ class MarketDataConsumer(AsyncWebsocketConsumer):
                 self.channel_name
             )
 
-        # لغو تسک نظارت
         if hasattr(self, "monitor_task"):
             self.monitor_task.cancel()
 
@@ -62,7 +61,7 @@ class MarketDataConsumer(AsyncWebsocketConsumer):
 
         try:
             data = await self.get_market_data(count)
-            if self.is_connected:  # اطمینان از اینکه اتصال هنوز برقرار است
+            if self.is_connected:
                 await self.send(text_data=json.dumps(data))
         except Exception as e:
             print(f"Error during data scraping: {e}")
@@ -71,7 +70,7 @@ class MarketDataConsumer(AsyncWebsocketConsumer):
 
     async def get_market_data(self, count):
         from selenium.webdriver.chrome.service import Service
-        import asyncio  # برای زمان‌بندی دقیق و مدیریت غیرهمزمان
+        import asyncio
     
         chrome_options = Options()
         # chrome_options.add_argument('--headless')
@@ -79,7 +78,7 @@ class MarketDataConsumer(AsyncWebsocketConsumer):
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-extensions')
-        chrome_options.add_argument('--disable-blink-features=AutomationControlled')  # برای جلوگیری از تشخیص خودکار
+        chrome_options.add_argument('--disable-blink-features=AutomationControlled')
         chrome_options.add_argument(
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         )
@@ -102,9 +101,9 @@ class MarketDataConsumer(AsyncWebsocketConsumer):
         WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".tag-page__posts-col li")))
         time.sleep(3)
         height = self.driver.execute_script("return document.body.scrollHeight")
-        scroll_step = height // 5  # تقسیم صفحه به سه قسمت برابر
+        scroll_step = height // 5  # limit reading page to 5
 
-        # اسکرول به پایین صفحه در سه مرحله
+        # scrolling page to 5 steps
         for i in range(1, 6):
             scroll_position = scroll_step * i
             self.driver.execute_script(f"window.scrollTo(0, {scroll_position});")
@@ -213,7 +212,7 @@ class MarketDataConsumer(AsyncWebsocketConsumer):
     
         self.driver.quit()
         print("Browser closed.")
-        if data:  # اگر داده‌ها خالی نبودند
+        if data:
             await self.save_data_to_db(data)
         return {
             "scraped_count": len(data),
@@ -226,12 +225,12 @@ class MarketDataConsumer(AsyncWebsocketConsumer):
     def authenticate_user(self, token):
         from rest_framework.authtoken.models import Token
         try:
-            # بررسی صحت توکن و دیکود کردن آن
-            token_obj = Token.objects.get(key=token)  # گرفتن توکن از دیتابیس
-            user = token_obj.user  # دریافت کاربر مرتبط با توکن
+
+            token_obj = Token.objects.get(key=token)
+            user = token_obj.user
             return user
         except Token.DoesNotExist:
-            print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! تAuthentication error: Token does not exist.")
+            print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Authentication error: Token does not exist.")
             return None
         except Exception as e:
             print(f"Authentication error: {e}")
@@ -240,10 +239,10 @@ class MarketDataConsumer(AsyncWebsocketConsumer):
     async def monitor_connection(self):
         import asyncio
         while self.is_connected:
-            await asyncio.sleep(1)  # بررسی وضعیت اتصال هر ۱ ثانیه
+            await asyncio.sleep(1)
             if not self.is_connected:
                 print("Connection lost. Closing resources...")
-                if self.driver is not None:  # اگر درایور وجود دارد، آن را ببندید
+                if self.driver is not None:
                     try:
                         self.driver.quit()
                     except Exception as e:
